@@ -1,0 +1,54 @@
+{
+  "A": {
+    "name": "A",
+    "version": "1.0.0",
+    "dependencies": [
+      "B",
+      "C"
+    ]
+  },
+  "B": {
+    "name": "B",
+    "version": "1.0.0",
+    "dependencies": [
+      "D",
+      "E"
+    ]
+  },
+  "C": {
+    "name": "C",
+    "version": "1.0.0",
+    "dependencies": [
+      "F"
+    ]
+  },
+  "D": {
+    "name": "D",
+    "version": "1.0.0",
+    "dependencies": [
+      "B"
+    ]
+  },
+  "E": {
+    "name": "E",
+    "version": "1.0.0",
+    "dependencies": [
+      "F",
+      "G"
+    ]
+  },
+  "F": {
+    "name": "F",
+    "version": "1.0.0",
+    "dependencies": [
+      "G"
+    ]
+  },
+  "G": {
+    "name": "G",
+    "version": "1.0.0",
+    "dependencies": [
+      "E"
+    ]
+  }
+}
