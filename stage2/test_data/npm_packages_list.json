@@ -1,0 +1,22 @@
+{
+  "packages": [
+    {
+      "name": "express",
+      "version": "4.18.2",
+      "dependencies": [
+        "accepts",
+        "array-flatten",
+        "body-parser",
+        "cookie",
+        "debug"
+      ]
+    },
+    {
+      "name": "react",
+      "version": "18.2.0",
+      "dependencies": [
+        "loose-envify"
+      ]
+    }
+  ]
+}
