@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Примеры тестирования инструмента визуализации зависимостей.
-Этапы 1-3.
+Этапы 1-4.
 """
 
 import os
@@ -278,81 +278,67 @@ def main():
     """Запуск всех тестов."""
     print("=" * 70)
     print("ДЕМОНСТРАЦИЯ ИНСТРУМЕНТА ВИЗУАЛИЗАЦИИ ЗАВИСИМОСТЕЙ")
-    print("Этапы 1-3: Построение графа зависимостей с BFS")
+    print("Этапы 1-4: Порядок загрузки зависимостей")
     print("=" * 70)
     print()
     
     # Создание тестовых репозиториев
     create_test_repositories()
     
-    # ===== ЭТАП 3: ПОСТРОЕНИЕ ГРАФА ЗАВИСИМОСТЕЙ =====
+    # ===== ЭТАП 4: ПОРЯДОК ЗАГРУЗКИ ЗАВИСИМОСТЕЙ =====
     print(f"\n{'#' * 70}")
-    print("# ЭТАП 3: ПОСТРОЕНИЕ ГРАФА ЗАВИСИМОСТЕЙ")
+    print("# ЭТАП 4: ПОРЯДОК ЗАГРУЗКИ ЗАВИСИМОСТЕЙ")
     print(f"{'#' * 70}")
     
-    # Тест 1: Простой граф без циклов
+    # Тест 1: Простой граф - порядок загрузки
     run_test(
-        "Простой граф без циклических зависимостей",
+        "Порядок загрузки для простого графа без циклов",
+        "python dependency_visualizer.py -p A -r test_data/simple_graph.json -t --load-order"
+    )
+    
+    # Тест 2: Граф с циклами - порядок загрузки
+    run_test(
+        "Порядок загрузки для графа с циклическими зависимостями",
+        "python dependency_visualizer.py -p A -r test_data/cyclic_graph.json -t --load-order"
+    )
+    
+    # Тест 3: Сложный граф - порядок загрузки
+    run_test(
+        "Порядок загрузки для сложного графа с множественными циклами",
+        "python dependency_visualizer.py -p A -r test_data/complex_graph.json -t --load-order"
+    )
+    
+    # Тест 4: Глубокий граф - порядок загрузки
+    run_test(
+        "Порядок загрузки для глубокого графа",
+        "python dependency_visualizer.py -p A -r test_data/deep_graph.json -t --load-order"
+    )
+    
+    # Тест 5: Широкий граф - порядок загрузки
+    run_test(
+        "Порядок загрузки для широкого графа",
+        "python dependency_visualizer.py -p A -r test_data/wide_graph.json -t --load-order"
+    )
+    
+    # Тест 6: Порядок загрузки с фильтрацией
+    run_test(
+        "Порядок загрузки с исключением пакетов '_DEV'",
+        "python dependency_visualizer.py -p A -r test_data/filtered_graph.json -t --load-order -f _DEV"
+    )
+    
+    # ===== СРАВНЕНИЕ С ГРАФОМ (без --load-order) =====
+    print(f"\n{'#' * 70}")
+    print("# СРАВНЕНИЕ: ГРАФ vs ПОРЯДОК ЗАГРУЗКИ")
+    print(f"{'#' * 70}")
+    
+    run_test(
+        "Граф зависимостей (обычный режим)",
         "python dependency_visualizer.py -p A -r test_data/simple_graph.json -t"
     )
     
-    # Тест 2: Граф с циклическими зависимостями
     run_test(
-        "Граф с циклическими зависимостями (A → B → C → A)",
-        "python dependency_visualizer.py -p A -r test_data/cyclic_graph.json -t"
-    )
-    
-    # Тест 3: Сложный граф с множественными циклами
-    run_test(
-        "Сложный граф с множественными циклами",
-        "python dependency_visualizer.py -p A -r test_data/complex_graph.json -t"
-    )
-    
-    # Тест 4: Фильтрация пакетов (исключение DEV пакетов)
-    run_test(
-        "Фильтрация пакетов: исключение пакетов с '_DEV'",
-        "python dependency_visualizer.py -p A -r test_data/filtered_graph.json -t -f _DEV"
-    )
-    
-    # Тест 5: Ограничение глубины анализа
-    run_test(
-        "Ограничение глубины анализа (max-depth=3)",
-        "python dependency_visualizer.py -p A -r test_data/deep_graph.json -t -d 3"
-    )
-    
-    # Тест 6: Широкий граф
-    run_test(
-        "Широкий граф (много зависимостей на одном уровне)",
-        "python dependency_visualizer.py -p A -r test_data/wide_graph.json -t"
-    )
-    
-    # Тест 7: Глубокий граф с полной глубиной
-    run_test(
-        "Глубокий граф с полным анализом",
-        "python dependency_visualizer.py -p A -r test_data/deep_graph.json -t -d 10"
-    )
-    
-    # Тест 8: Анализ отдельного узла без зависимостей
-    run_test(
-        "Анализ пакета без зависимостей",
-        "python dependency_visualizer.py -p D -r test_data/simple_graph.json -t"
-    )
-    
-    # ===== ТЕСТЫ ОБРАБОТКИ ОШИБОК =====
-    print(f"\n{'#' * 70}")
-    print("# ТЕСТЫ ОБРАБОТКИ ОШИБОК")
-    print(f"{'#' * 70}")
-    
-    # Тест 9: Несуществующий пакет
-    run_test(
-        "Ошибка: Несуществующий пакет",
-        "python dependency_visualizer.py -p Z -r test_data/simple_graph.json -t"
-    )
-    
-    # Тест 10: Несуществующий файл
-    run_test(
-        "Ошибка: Несуществующий файл репозитория",
-        "python dependency_visualizer.py -p A -r test_data/nonexistent.json -t"
+        "Порядок загрузки (режим --load-order)",
+        "python dependency_visualizer.py -p A -r test_data/simple_graph.json -t --load-order"
     )
     
     # ===== ДОПОЛНИТЕЛЬНЫЕ ТЕСТЫ =====
@@ -360,50 +346,62 @@ def main():
     print("# ДОПОЛНИТЕЛЬНЫЕ ТЕСТЫ")
     print(f"{'#' * 70}")
     
-    # Тест 11: Справка
+    # Тест 7: Справка
     run_test(
-        "Вывод справки",
+        "Вывод справки с новым параметром --load-order",
         "python dependency_visualizer.py --help"
     )
     
-    # Тест 12: Версия
+    # Тест 8: Версия
     run_test(
         "Вывод версии",
         "python dependency_visualizer.py --version"
     )
     
-    # ===== СВОДНАЯ ИНФОРМАЦИЯ =====
+    # ===== ОБЪЯСНЕНИЕ РАЗЛИЧИЙ =====
     print(f"\n{'#' * 70}")
-    print("# СВОДНАЯ ИНФОРМАЦИЯ О ТЕСТОВЫХ ГРАФАХ")
+    print("# ОБЪЯСНЕНИЕ РАБОТЫ ПОРЯДКА ЗАГРУЗКИ")
     print(f"{'#' * 70}")
     print("""
-1. simple_graph.json - Простой граф без циклов
-   A → B → D
-   A → C → D, E
-   
-2. cyclic_graph.json - Граф с простым циклом
-   A → B → C → A (цикл)
-   C → D
-   
-3. complex_graph.json - Сложный граф с множественными циклами
-   A → B → D → B (цикл)
-   B → E → F → G → E (цикл)
-   
-4. filtered_graph.json - Граф для демонстрации фильтрации
-   Содержит пакеты C_DEV и E_DEV для исключения
-   
-5. deep_graph.json - Глубокий граф (8 уровней)
-   A → B → C → D → E → F → G → H
-   
-6. wide_graph.json - Широкий граф
-   A → [B, C, D, E, F]
+Порядок загрузки зависимостей определяется топологической сортировкой графа.
+
+АЛГОРИТМ (алгоритм Кана):
+1. Находим все пакеты без зависимостей (независимые)
+2. Добавляем их в порядок загрузки первыми
+3. "Удаляем" эти пакеты из графа
+4. Повторяем шаги 1-3 для оставшихся пакетов
+
+ПРИМЕР (simple_graph.json):
+Граф:  A → B → D
+       A → C → D, E
+
+Порядок загрузки:
+1. D, E  (нет зависимостей)
+2. B, C  (зависят только от D, E)
+3. A     (зависит от B, C)
+
+СРАВНЕНИЕ С NPM:
+npm использует аналогичную стратегию, но с дополнительными оптимизациями:
+- Параллельная загрузка независимых пакетов
+- Кеширование уже загруженных версий
+- Разрешение конфликтов версий
+
+РАЗЛИЧИЯ:
+1. Наш инструмент показывает строгую последовательность
+2. npm может загружать независимые пакеты параллельно
+3. При наличии циклов npm использует более сложные эвристики
+
+ЦИКЛИЧЕСКИЕ ЗАВИСИМОСТИ:
+- Топологическая сортировка невозможна при наличии циклов
+- Наш инструмент добавляет оставшиеся пакеты эвристически
+- npm обычно разрывает циклы через peer dependencies
     """)
     
     print(f"\n{'=' * 70}")
     print("ВСЕ ТЕСТЫ ЗАВЕРШЕНЫ")
     print(f"{'=' * 70}")
     print("\nДля работы с реальными npm пакетами используйте:")
-    print("python dependency_visualizer.py -p <package_name> -r https://registry.npmjs.org")
+    print("python dependency_visualizer.py -p <package_name> -r https://registry.npmjs.org --load-order")
 
 
 if __name__ == '__main__':

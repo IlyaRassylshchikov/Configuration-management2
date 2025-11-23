@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Инструмент визуализации графа зависимостей для менеджера пакетов.
-Этапы 1-3: CLI-приложение с построением графа зависимостей.
+Этапы 1-4: CLI-приложение с порядком загрузки зависимостей.
 """
 
 import argparse
@@ -59,7 +59,7 @@ class DependencyVisualizer:
     
     def __init__(self, package_name: str, repo_url: str, 
                  test_mode: bool = False, filter_substring: Optional[str] = None,
-                 max_depth: int = 10):
+                 max_depth: int = 10, show_load_order: bool = False):
         """
         Инициализация визуализатора зависимостей.
         
@@ -69,12 +69,14 @@ class DependencyVisualizer:
             test_mode: Режим работы с тестовым репозиторием
             filter_substring: Подстрока для фильтрации (исключения) пакетов
             max_depth: Максимальная глубина анализа зависимостей
+            show_load_order: Показать порядок загрузки зависимостей
         """
         self.package_name = package_name
         self.repo_url = repo_url
         self.test_mode = test_mode
         self.filter_substring = filter_substring
         self.max_depth = max_depth
+        self.show_load_order = show_load_order
         self.dependencies_cache: Dict[str, Dict] = {}
         self.graph = DependencyGraph()
         self.visited: Set[str] = set()
@@ -162,7 +164,7 @@ class DependencyVisualizer:
             req = urllib.request.Request(
                 url,
                 headers={
-                    'User-Agent': 'DependencyVisualizer/0.3.0',
+                    'User-Agent': 'DependencyVisualizer/0.4.0',
                     'Accept': 'application/json'
                 }
             )
@@ -371,6 +373,95 @@ class DependencyVisualizer:
         
         return cycles
     
+    def get_load_order(self) -> List[str]:
+        """
+        Получение порядка загрузки зависимостей (топологическая сортировка).
+        
+        Returns:
+            Список пакетов в порядке загрузки
+        """
+        # Алгоритм Кана для топологической сортировки
+        in_degree = {node: 0 for node in self.graph.nodes}
+        
+        # Подсчитываем входящие рёбра для каждого узла
+        for node in self.graph.nodes:
+            for dep in self.graph.get_dependencies(node):
+                if dep in in_degree:
+                    in_degree[dep] += 1
+        
+        # Очередь узлов без входящих рёбер
+        queue = deque([node for node, degree in in_degree.items() if degree == 0])
+        result = []
+        
+        while queue:
+            # Берём узел без зависимостей
+            node = queue.popleft()
+            result.append(node)
+            
+            # Уменьшаем счётчик входящих рёбер для зависимостей
+            for neighbor in self.graph.nodes:
+                if self.graph.has_edge(neighbor, node):
+                    in_degree[node] -= 1
+                    if in_degree[node] == 0:
+                        queue.append(node)
+        
+        # Если есть циклы, добавляем оставшиеся узлы
+        remaining = set(self.graph.nodes) - set(result)
+        if remaining:
+            result.extend(sorted(remaining))
+        
+        return result
+    
+    def print_load_order(self) -> None:
+        """Вывод порядка загрузки зависимостей."""
+        print(f"\n{'=' * 60}")
+        print(f"ПОРЯДОК ЗАГРУЗКИ ЗАВИСИМОСТЕЙ ДЛЯ ПАКЕТА: {self.package_name}")
+        print(f"{'=' * 60}\n")
+        
+        if not self.graph.nodes:
+            print("✗ Граф пустой")
+            return
+        
+        load_order = self.get_load_order()
+        
+        print(f"Всего пакетов для загрузки: {len(load_order)}\n")
+        
+        # Проверка на циклы
+        cycles = self.detect_cycles()
+        if cycles:
+            print(f"⚠ ВНИМАНИЕ: Обнаружены циклические зависимости!")
+            print(f"Порядок загрузки может быть неоднозначным.\n")
+        
+        print("Порядок загрузки (от независимых к зависимым):\n")
+        
+        for i, package in enumerate(load_order, 1):
+            deps = self.graph.get_dependencies(package)
+            if package == self.package_name:
+                marker = "← ЦЕЛЕВОЙ ПАКЕТ"
+            elif not deps:
+                marker = "(нет зависимостей)"
+            else:
+                marker = f"(зависит от: {', '.join(sorted(deps))})"
+            
+            print(f"{i:2d}. {package:20s} {marker}")
+        
+        print(f"\n{'=' * 60}")
+        print("ПОЯСНЕНИЕ:")
+        print("=' * 60}")
+        print("Пакеты перечислены в порядке, в котором они должны быть загружены.")
+        print("Пакеты без зависимостей загружаются первыми.")
+        print("Каждый следующий пакет может зависеть только от предыдущих.\n")
+        
+        if cycles:
+            print(f"⚠ ЦИКЛИЧЕСКИЕ ЗАВИСИМОСТИ:")
+            for i, cycle in enumerate(cycles, 1):
+                print(f"   Цикл {i}: {' → '.join(cycle)}")
+            print()
+            print("При наличии циклов порядок загрузки определяется эвристически.")
+            print("Реальный менеджер пакетов может использовать другую стратегию.\n")
+        
+        print(f"{'=' * 60}")
+    
     def print_graph(self) -> None:
         """Вывод графа зависимостей в текстовом формате."""
         print(f"\n{'=' * 60}")
@@ -448,8 +539,13 @@ class DependencyVisualizer:
             # Построение графа
             self.build_dependency_graph_bfs(self.package_name)
             
-            # Вывод графа
-            self.print_graph()
+            # Вывод графа (если не режим порядка загрузки)
+            if not self.show_load_order:
+                self.print_graph()
+            
+            # Вывод порядка загрузки (Этап 4)
+            if self.show_load_order:
+                self.print_load_order()
             
         except DependencyError as e:
             print(f"✗ Ошибка при анализе зависимостей: {e}", file=sys.stderr)
@@ -471,14 +567,14 @@ def parse_arguments() -> argparse.Namespace:
   # Анализ npm пакета
   %(prog)s -p express -r https://registry.npmjs.org
   
+  # Порядок загрузки зависимостей
+  %(prog)s -p A -r ./test_data/simple_graph.json -t --load-order
+  
   # Работа с тестовым репозиторием
   %(prog)s -p A -r ./test_data/graph_test.json -t
   
   # Исключение пакетов с подстрокой "dev"
   %(prog)s -p react -r https://registry.npmjs.org -f "dev"
-  
-  # Ограничение глубины анализа
-  %(prog)s -p webpack -r https://registry.npmjs.org -d 3
         """
     )
     
@@ -521,9 +617,15 @@ def parse_arguments() -> argparse.Namespace:
     )
     
     parser.add_argument(
+        '-l', '--load-order',
+        action='store_true',
+        help='Показать порядок загрузки зависимостей (Этап 4)'
+    )
+    
+    parser.add_argument(
         '-v', '--version',
         action='version',
-        version='%(prog)s 0.3.0 (Этапы 1-3)'
+        version='%(prog)s 0.4.0 (Этапы 1-4)'
     )
     
     return parser.parse_args()
@@ -546,7 +648,8 @@ def main() -> int:
             repo_url=args.repo,
             test_mode=args.test_mode,
             filter_substring=args.filter,
-            max_depth=args.max_depth
+            max_depth=args.max_depth,
+            show_load_order=args.load_order
         )
         
         # Валидация конфигурации
